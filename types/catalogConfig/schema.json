@@ -1,30 +1,25 @@
 {
-  "$id": "https://github.com/data-fair/catalog-udata/catalog-config",
+  "$id": "https://github.com/data-fair/catalog-airtable/catalog-config",
   "x-exports": [
     "types",
-    "validate",
-    "schema"
+    "schema",
+    "validate"
   ],
-  "title": "MockConfig",
+  "title": "AirtableConfig",
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "url"
+    "apiKey"
   ],
   "properties": {
-    "url": {
+    "apiKey": {
       "type": "string",
-      "title": "URL",
-      "description": "The url of the catalog",
+      "title": "Jeton d'accès personnel",
+      "description": "Your personal access token (see https://airtable.com/create/tokens).<br>Required permissions: `data.records:read`, `schema.bases:read`.",
       "x-i18n-description": {
-        "fr": "L'URL de l'API du catalogue"
+        "fr": "Votre jeton d'accès personnel (voir https://airtable.com/create/tokens).<br>Permissions requises (*Champs d’application*) :  `data.records:read`, `schema.bases:read`"
       },
-      "pattern": "^https?://.*[^/]$",
-      "errorMessage": "The URL must start with http:// or https:// and must not end with `/`.",
-      "x-i18n-errorMessage": {
-        "fr": "L'URL doit commencer par http:// ou https:// et ne pas se terminer par `/`."
-      },
-      "examples": ["https://example.com"]
+      "layout": "textarea"
     }
   }
 }

@@ -4,10 +4,9 @@
  * We add "as const" to ensure the type is a list of literal type, not a list of strings.
  * This allows TypeScript to check if the plugin has the required funcitons for each capability.
  */
-export default [
+export const capabilities = [
   'import' as const,
-  'search' as const,
-  'importConfig' as const,
-  'publishDataset' as const,
-  'deletePublication' as const
 ]
+
+export type AirtableCapabilities = typeof capabilities
+export default capabilities

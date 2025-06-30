@@ -9,6 +9,16 @@ type Field = {
   primaryField?: string
 }
 
+/**
+ * Retrieves the fields (headers) of a specific table in an Airtable base,
+ * including information about links to other tables if necessary.
+ *
+ * @param apiKey - The Airtable API key used for authentication.
+ * @param baseId - The identifier of the Airtable base to query.
+ * @param tableId - The identifier of the table whose fields are to be retrieved.
+ * @returns A promise resolved with an array of fields (`Field[]`) describing the table columns.
+ * @throws An error if fetching tables fails or if the table or a linked table is not found.
+ */
 const getHeaders = async (apiKey: string, baseId: string, tableId: string): Promise<Field[]> => {
   const response = await fetch(`https://api.airtable.com/v0/meta/bases/${baseId}/tables`, {
     headers: {
@@ -49,6 +59,16 @@ const getHeaders = async (apiKey: string, baseId: string, tableId: string): Prom
   return fields
 }
 
+/**
+ * Downloads and caches records from linked tables in Airtable.
+ *
+ * @param apiKey - The Airtable API key used for authentication.
+ * @param baseId - The identifier of the Airtable base to query.
+ * @param fields - The array of fields to check for linked tables.
+ * @param cache - An optional cache object to store linked table records.
+ * @returns A promise resolved with the updated cache containing linked table records.
+ * @throws An error if fetching records from a linked table fails.
+ */
 const downloadLinkedTables = async (
   apiKey: string,
   baseId: string,
@@ -91,6 +111,25 @@ const downloadLinkedTables = async (
   return cache
 }
 
+/**
+ * Downloads records from an Airtable table as a CSV file.
+ *
+ * This function fetches the table structure and data from Airtable using the provided API key and resource ID,
+ * resolves any linked table references, and writes the resulting data to a CSV file in the specified temporary directory.
+ *
+ * @param {DownloadResourceContext<AirtableConfig>} params - The context for downloading the resource.
+ * @param {AirtableConfig['secrets']} params.secrets - The secrets object containing the Airtable API key.
+ * @param {string} params.resourceId - The resource identifier in the format "baseId/tableId".
+ * @param {string} params.tmpDir - The temporary directory where the CSV file will be written.
+ * @returns {Promise<string>} The path to the generated CSV file.
+ *
+ * @async
+ *
+ * @throws {Error} If there is an error fetching records from Airtable or writing the CSV file.
+ *
+ * @remarks
+ * - Linked table fields are resolved and joined with a pipe ('|') separator.
+ */
 export const downloadResource = async ({ secrets, resourceId, tmpDir }: DownloadResourceContext<AirtableConfig>): Promise<string> => {
   const [baseId, tableId] = resourceId.split('/')
 

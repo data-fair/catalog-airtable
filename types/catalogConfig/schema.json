@@ -15,9 +15,9 @@
     "apiKey": {
       "type": "string",
       "title": "Jeton d'accès personnel",
-      "description": "Your personal access token (see https://airtable.com/create/tokens).<br>Required permissions: `data.records:read`, `schema.bases:read`.",
+      "description": "Your personal access token (see https://airtable.com/create/tokens).<br>Required permissions: `data.records:read`, `schema.bases:read`.<br>In the 'Access' section, add the bases or workspace that the token will access.",
       "x-i18n-description": {
-        "fr": "Votre jeton d'accès personnel (voir https://airtable.com/create/tokens).<br>Permissions requises (*Champs d’application*) :  `data.records:read`, `schema.bases:read`"
+        "fr": "Votre jeton d'accès personnel (voir https://airtable.com/create/tokens).<br>Permissions requises (*Champs d’application*) : `data.records:read`, `schema.bases:read`.<br>Dans la section 'Accès' : ajouter les bases ou l'espace de travail accessibles via le jeton d'accès personnel."
       },
       "layout": "textarea"
     }

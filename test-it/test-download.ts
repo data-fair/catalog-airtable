@@ -26,6 +26,21 @@ describe('test the downloadResource function', () => {
         }
       }
     }))
+    // Mock fetch for the Airtable metadata API
+    globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url.startsWith('https://api.airtable.com/v0/meta/bases/')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            tables: [
+              { id: 'tableId', name: 'Table', fields: [{ name: 'a' }, { name: 'b' }] }
+            ]
+          })
+        })
+      }
+      return Promise.reject(new Error('Unknown URL'))
+    })
+
     const plugin = (await import('../index.ts')).default as CatalogPlugin
     downloadResource = plugin.downloadResource
   })
@@ -47,6 +62,42 @@ describe('test the downloadResource function', () => {
     expect(fs.existsSync(outputPath)).toBe(true)
     const content = fs.readFileSync(outputPath, 'utf8')
     expect(content).toBe('a,b\n1,2\n3,4\n')
+  })
+
+  it('transform array in string with \'|\' as separator', async () => {
+    const context: DownloadResourceContext<AirtableConfig> = {
+      secrets: { apiKey: 'fake-api-key' },
+      resourceId: 'baseId/tableId',
+      tmpDir
+    } as any
+
+    // Mock Airtable to return arrays in fields
+    vi.resetModules()
+    vi.doMock('airtable', () => ({
+      default: class {
+        base () {
+          return () => ({
+            select: () => ({
+              eachPage: (cb: any, done: any) => {
+                cb([
+                  { fields: { a: [1, 2], b: 'foo' } },
+                  { fields: { a: [], b: 'bar' } }
+                ], () => done())
+              }
+            })
+          })
+        }
+      }
+    }))
+
+    const plugin = (await import('../index.ts')).default as CatalogPlugin
+    const downloadResource = plugin.downloadResource
+
+    const resultPath = await downloadResource(context)
+    expect(resultPath).toBe(outputPath)
+    expect(fs.existsSync(outputPath)).toBe(true)
+    const content = fs.readFileSync(outputPath, 'utf8')
+    expect(content).toBe('a,b\n1|2,foo\n,bar\n')
   })
 
   it('should return an error with an invalid API key', async () => {
@@ -73,6 +124,6 @@ describe('test the downloadResource function', () => {
 
     await expect(async () => {
       await downloadResource(context)
-    }).rejects.toThrow(/Une erreur est survenue lors du traitement de votre demande./i)
+    }).rejects.toThrow(/Authentication invalid/i)
   })
 })

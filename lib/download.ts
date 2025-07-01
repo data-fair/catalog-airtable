@@ -1,8 +1,11 @@
-import type { DownloadResourceContext } from '@data-fair/lib-common-types/catalog/index.js'
+import type { CatalogPlugin, GetResourceContext, Resource } from '@data-fair/lib-common-types/catalog/index.js'
 import type { AirtableConfig } from '#types'
 import Airtable from 'airtable'
 import { stringify } from 'csv-stringify/sync'
 
+/**
+ * Private type to symbolize a field
+ */
 type Field = {
   name: string,
   linkedTable?: string,
@@ -60,7 +63,7 @@ const getHeaders = async (apiKey: string, baseId: string, tableId: string): Prom
 }
 
 /**
- * Downloads and caches records from linked tables in Airtable.
+ * Caches records from linked tables in Airtable.
  *
  * @param apiKey - The Airtable API key used for authentication.
  * @param baseId - The identifier of the Airtable base to query.
@@ -69,7 +72,7 @@ const getHeaders = async (apiKey: string, baseId: string, tableId: string): Prom
  * @returns A promise resolved with the updated cache containing linked table records.
  * @throws An error if fetching records from a linked table fails.
  */
-const downloadLinkedTables = async (
+const getLinkedTables = async (
   apiKey: string,
   baseId: string,
   fields: Field[],
@@ -112,29 +115,65 @@ const downloadLinkedTables = async (
 }
 
 /**
+ * Retrieves information about a resource thanks to its resourceId.
+ * This function fetches the information and returns a Resource object.
+ *
+ * @param params.secrets - The secrets object containing the Airtable API key.
+ * @param params.resourceId - The resource identifier in the format "baseId/tableId"
+ * @returns A promise resolved with the Resource metadata.
+ */
+
+const getMetaData = async ({ secrets, resourceId }: GetResourceContext<AirtableConfig>): Promise<Resource> => {
+  const [baseId, tableId] = resourceId.split('/')
+
+  // Récupère les métadonnées de la table spécifique
+  const response = await fetch(`https://api.airtable.com/v0/meta/bases/${baseId}/tables`, {
+    headers: {
+      Authorization: `Bearer ${secrets.apiKey}`,
+      'Content-Type': 'application/json'
+    }
+  })
+  if (!response.ok) {
+    console.error(`Failed to get table metadata: ${response.status} ${response.statusText}`)
+    throw new Error('Erreur dans la récupération des métadonnées de la table')
+  }
+
+  const data = await response.json()
+  const table = (data.tables || []).find((t: any) => t.id === tableId)
+  if (!table) {
+    throw new Error(`Table ${tableId} not found in base ${baseId}`)
+  }
+
+  // format des tables : https://airtable.com/developers/web/api/model/table-model
+  return {
+    id: resourceId,
+    origin: `https://api.airtable.com/v0/${baseId}/${tableId}`,
+    title: table.name,
+    format: 'csv',
+    description: table.description,
+    filePath: ''
+  }
+}
+
+/**
  * Downloads records from an Airtable table as a CSV file.
  *
  * This function fetches the table structure and data from Airtable using the provided API key and resource ID,
  * resolves any linked table references, and writes the resulting data to a CSV file in the specified temporary directory.
  *
- * @param {DownloadResourceContext<AirtableConfig>} params - The context for downloading the resource.
- * @param {AirtableConfig['secrets']} params.secrets - The secrets object containing the Airtable API key.
- * @param {string} params.resourceId - The resource identifier in the format "baseId/tableId".
- * @param {string} params.tmpDir - The temporary directory where the CSV file will be written.
- * @returns {Promise<string>} The path to the generated CSV file.
- *
- * @async
- *
- * @throws {Error} If there is an error fetching records from Airtable or writing the CSV file.
+ * @param params.secrets - The secrets object containing the Airtable API key.
+ * @param params.resourceId - The resource identifier in the format "baseId/tableId".
+ * @param params.tmpDir - The temporary directory where the CSV file will be written.
+ * @returns The path to the generated CSV file.
  *
  * @remarks
  * - Linked table fields are resolved and joined with a pipe ('|') separator.
  */
-export const downloadResource = async ({ secrets, resourceId, tmpDir }: DownloadResourceContext<AirtableConfig>): Promise<string> => {
+const download = async ({ secrets, resourceId, tmpDir }: GetResourceContext<AirtableConfig>): Promise<string> => {
   const [baseId, tableId] = resourceId.split('/')
 
   const fields = await getHeaders(secrets.apiKey, baseId, tableId)
-  const linkedTablesCache = await downloadLinkedTables(secrets.apiKey, baseId, fields)
+  const linkedTablesCache = await getLinkedTables(secrets.apiKey, baseId, fields)
 
   const base = new Airtable({ apiKey: secrets.apiKey }).base(baseId)
 
@@ -202,4 +241,16 @@ export const downloadResource = async ({ secrets, resourceId, tmpDir }: Download
   })
 
   return outputPath
+}
+
+/**
+ * Retrieves a resource and downloads its data as a CSV file.
+ *
+ * @param context - The context containing secrets, resourceId, and tmpDir.
+ * @returns A promise resolved with the Resource object, including the file path to the downloaded CSV.
+ */
+export const getResource = async (context: GetResourceContext<AirtableConfig>): ReturnType<CatalogPlugin<AirtableConfig>['getResource']> => {
+  const res: Resource = await getMetaData(context)
+  res.filePath = await download(context)
+  return res
 }

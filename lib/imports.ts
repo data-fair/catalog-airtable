@@ -1,8 +1,9 @@
-import type { ListContext, Folder, Resource, GetResourceContext } from '@data-fair/lib-common-types/catalog/index.js'
+import type { ListContext, Folder, CatalogPlugin } from '@data-fair/lib-common-types/catalog/index.js'
 import type { AirtableConfig } from '#types'
 import type { AirtableCapabilities } from './capabilities.ts'
 
-let lastBases : Folder[]
+let lastBases: Folder[]
+type ResourceList = Awaited<ReturnType<CatalogPlugin['list']>>['results']
 
 /**
  * Liste les Bases disponible à partir d'une clé API / Personnal Access Token
@@ -37,7 +38,7 @@ const listBases = async (apiKey: string): Promise<Folder[]> => {
  * @param baseId L'identifiant de la base Airtable
  * @returns Un tableau des tables de la base
  */
-const listTables = async (apiKey: string, baseId: string): Promise<Resource[]> => {
+const listTables = async (apiKey: string, baseId: string): Promise<ResourceList> => {
   // La librairie officielle ne permet pas de lister les tables directement,
   // donc on utilise l'API REST meta/tables
   const response = await fetch(`https://api.airtable.com/v0/meta/bases/${baseId}/tables`, {
@@ -53,20 +54,20 @@ const listTables = async (apiKey: string, baseId: string): Promise<Resource[]> =
 
   const data = await response.json()
   // transforme les data en Resource[]
-  const resources: Resource[] = (data.tables || []).map((base: any) => ({
+  const resources = (data.tables || []).map((base: any) => ({
     id: baseId + '/' + base.id,
     title: base.name,
     type: 'resource',
     format: 'csv',
-    url: `https://api.airtable.com/v0/${baseId}/${base.id}`
-  })
+    origin: `https://api.airtable.com/v0/${baseId}/${base.id}`
+  } as ResourceList[number])
   )
   return resources
 }
 
-export const list = async ({ secrets, params }: ListContext<AirtableConfig, AirtableCapabilities>): Promise<{ count: number; results: (Folder | Resource)[]; path: Folder[] }> => {
+export const list = async ({ secrets, params }: ListContext<AirtableConfig, AirtableCapabilities>): ReturnType<CatalogPlugin<AirtableConfig>['list']> => {
   // On suppose que l'id de la base est passé dans params.baseId
-  let res: (Folder | Resource)[]
+  let res: (Folder[] | ResourceList)
   const path: Folder[] = []
   if (params.currentFolderId) {
     res = await listTables(secrets.apiKey, params.currentFolderId)
@@ -83,35 +84,4 @@ export const list = async ({ secrets, params }: ListContext<AirtableConfig, Airt
     count: res.length,
     path
   }
-}
-export const getResource = async ({ secrets, resourceId }: GetResourceContext<AirtableConfig>): Promise<Resource> => {
-  const [baseId, tableId] = resourceId.split('/')
-
-  // Récupère les métadonnées de la table spécifique
-  const response = await fetch(`https://api.airtable.com/v0/meta/bases/${baseId}/tables`, {
-    headers: {
-      Authorization: `Bearer ${secrets.apiKey}`,
-      'Content-Type': 'application/json'
-    }
-  })
-  if (!response.ok) {
-    console.error(`Failed to get table metadata: ${response.status} ${response.statusText}`)
-    throw new Error('Erreur dans la récupération des métadonnées de la table')
-  }
-
-  const data = await response.json()
-  const table = (data.tables || []).find((t: any) => t.id === tableId)
-  if (!table) {
-    throw new Error(`Table ${tableId} not found in base ${baseId}`)
-  }
-
-  // format des tables : https://airtable.com/developers/web/api/model/table-model
-  return {
-    id: resourceId,
-    url: `https://api.airtable.com/v0/${baseId}/${tableId}`,
-    title: table.name,
-    format: 'csv',
-    type: 'resource',
-    description: table.description,
-  } as Resource
 }

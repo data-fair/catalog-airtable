@@ -22,13 +22,8 @@ const plugin: CatalogPlugin<AirtableConfig, AirtableCapabilities> = {
   },
 
   async getResource (context) {
-    const { getResource } = await import('./lib/imports.ts')
+    const { getResource } = await import('./lib/download.ts')
     return getResource(context)
-  },
-
-  async downloadResource (context) {
-    const { downloadResource } = await import('./lib/download.ts')
-    return downloadResource(context)
   },
 
   metadata: {

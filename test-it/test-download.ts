@@ -1,14 +1,14 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
 import * as fs from 'fs'
 import * as path from 'path'
-import type { CatalogPlugin, DownloadResourceContext } from '@data-fair/lib-common-types/catalog/index.js'
+import type { CatalogPlugin, GetResourceContext } from '@data-fair/lib-common-types/catalog/index.js'
 import type { AirtableConfig } from '#types'
 
 const tmpDir = '/tmp'
 const outputPath = path.join(tmpDir, 'tableId.csv')
 
-describe('test the downloadResource function', () => {
-  let downloadResource: CatalogPlugin['downloadResource']
+describe('test the getResource function', () => {
+  let getResource: CatalogPlugin['getResource']
 
   beforeEach(async () => {
     // Mock par défaut : succès
@@ -42,7 +42,7 @@ describe('test the downloadResource function', () => {
     })
 
     const plugin = (await import('../index.ts')).default as CatalogPlugin
-    downloadResource = plugin.downloadResource
+    getResource = plugin.getResource
   })
 
   afterEach(() => {
@@ -51,21 +51,25 @@ describe('test the downloadResource function', () => {
   })
 
   it('write a CSV with the data fetched', async () => {
-    const context: DownloadResourceContext<AirtableConfig> = {
+    const context: GetResourceContext<AirtableConfig> = {
       secrets: { apiKey: 'fake-api-key' },
       resourceId: 'baseId/tableId',
       tmpDir
     } as any
 
-    const resultPath = await downloadResource(context)
+    const resource = await getResource(context)
+    const resultPath = resource?.filePath
     expect(resultPath).toBe(outputPath)
     expect(fs.existsSync(outputPath)).toBe(true)
     const content = fs.readFileSync(outputPath, 'utf8')
     expect(content).toBe('a,b\n1,2\n3,4\n')
+    expect(resource?.id).toBe(context.resourceId)
+    expect(resource?.format).toBe('csv')
+    expect(resource?.title).toBe('Table')
   })
 
   it('transform array in string with \'|\' as separator', async () => {
-    const context: DownloadResourceContext<AirtableConfig> = {
+    const context: GetResourceContext<AirtableConfig> = {
       secrets: { apiKey: 'fake-api-key' },
       resourceId: 'baseId/tableId',
       tmpDir
@@ -91,9 +95,10 @@ describe('test the downloadResource function', () => {
     }))
 
     const plugin = (await import('../index.ts')).default as CatalogPlugin
-    const downloadResource = plugin.downloadResource
+    const getResource = plugin.getResource
 
-    const resultPath = await downloadResource(context)
+    const resource = await getResource(context)
+    const resultPath = resource?.filePath
     expect(resultPath).toBe(outputPath)
     expect(fs.existsSync(outputPath)).toBe(true)
     const content = fs.readFileSync(outputPath, 'utf8')
@@ -116,14 +121,14 @@ describe('test the downloadResource function', () => {
       }
     }))
 
-    const context: DownloadResourceContext<AirtableConfig> = {
+    const context: GetResourceContext<AirtableConfig> = {
       secrets: { apiKey: 'invalid-api-key' },
       resourceId: 'baseId/tableId',
       tmpDir
     } as any
 
     await expect(async () => {
-      await downloadResource(context)
+      await getResource(context)
     }).rejects.toThrow(/Authentication invalid/i)
   })
 })

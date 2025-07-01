@@ -147,7 +147,7 @@ const getMetaData = async ({ secrets, resourceId }: GetResourceContext<AirtableC
   // format des tables : https://airtable.com/developers/web/api/model/table-model
   return {
     id: resourceId,
-    origin: `https://api.airtable.com/v0/${baseId}/${tableId}`,
+    origin: `https://airtable.com/${baseId}/${tableId}`,
     title: table.name,
     format: 'csv',
     description: table.description,

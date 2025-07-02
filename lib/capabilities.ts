@@ -6,6 +6,7 @@
  */
 export const capabilities = [
   'import' as const,
+  'thumbnail' as const
 ]
 
 export type AirtableCapabilities = typeof capabilities

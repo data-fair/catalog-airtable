@@ -29,6 +29,7 @@ const plugin: CatalogPlugin<AirtableConfig, AirtableCapabilities> = {
   metadata: {
     title: 'Catalog Airtable',
     description: 'Airtable plugin for Data Fair Catalog',
+    thumbnailPath: './lib/airtable.svg',
     capabilities
   },
   configSchema,

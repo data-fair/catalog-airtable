@@ -1,4 +1,4 @@
-import type { CatalogPlugin, GetResourceContext, Resource } from '@data-fair/lib-common-types/catalog/index.js'
+import type { CatalogPlugin, GetResourceContext, Resource } from '@data-fair/types-catalogs'
 import type { AirtableConfig } from '#types'
 import Airtable from 'airtable'
 import { stringify } from 'csv-stringify/sync'
@@ -169,7 +169,7 @@ const getMetaData = async ({ secrets, resourceId }: GetResourceContext<AirtableC
  * @remarks
  * - Linked table fields are resolved and joined with a pipe ('|') separator.
  */
-const download = async ({ secrets, resourceId, tmpDir }: GetResourceContext<AirtableConfig>): Promise<string> => {
+const download = async ({ secrets, resourceId, tmpDir }: GetResourceContext<AirtableConfig>, fileName: string): Promise<string> => {
   const [baseId, tableId] = resourceId.split('/')
 
   const fields = await getHeaders(secrets.apiKey, baseId, tableId)
@@ -179,7 +179,7 @@ const download = async ({ secrets, resourceId, tmpDir }: GetResourceContext<Airt
 
   const fs = await import('fs')
   const path = await import('path')
-  const outputPath = path.join(tmpDir, `${tableId}.csv`)
+  const outputPath = path.join(tmpDir, `${fileName.replace(' ', '_')}.csv`)
   const writeStream = fs.createWriteStream(outputPath)
 
   const allHeaders: string[] = fields.map((f: Field) => f.name)
@@ -251,6 +251,6 @@ const download = async ({ secrets, resourceId, tmpDir }: GetResourceContext<Airt
  */
 export const getResource = async (context: GetResourceContext<AirtableConfig>): ReturnType<CatalogPlugin<AirtableConfig>['getResource']> => {
   const res: Resource = await getMetaData(context)
-  res.filePath = await download(context)
+  res.filePath = await download(context, res.title)
   return res
 }

@@ -1,4 +1,4 @@
-import type { CatalogPlugin } from '@data-fair/lib-common-types/catalog/index.js'
+import type { CatalogPlugin } from '@data-fair/types-catalogs'
 import { configSchema, assertConfigValid, type AirtableConfig } from '#types'
 import { type AirtableCapabilities, capabilities } from './lib/capabilities.ts'
 

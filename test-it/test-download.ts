@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
 import * as fs from 'fs'
 import * as path from 'path'
-import type { CatalogPlugin, GetResourceContext } from '@data-fair/lib-common-types/catalog/index.js'
+import type { CatalogPlugin, GetResourceContext } from '@data-fair/types-catalogs'
 import type { AirtableConfig } from '#types'
 
 const tmpDir = '/tmp'
-const outputPath = path.join(tmpDir, 'tableId.csv')
+const outputPath = path.join(tmpDir, 'Table.csv')
 
 describe('test the getResource function', () => {
   let getResource: CatalogPlugin['getResource']

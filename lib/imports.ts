@@ -1,4 +1,4 @@
-import type { ListContext, Folder, CatalogPlugin } from '@data-fair/lib-common-types/catalog/index.js'
+import type { ListContext, Folder, CatalogPlugin } from '@data-fair/types-catalogs'
 import type { AirtableConfig } from '#types'
 import type { AirtableCapabilities } from './capabilities.ts'
 

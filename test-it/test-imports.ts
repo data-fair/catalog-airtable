@@ -1,6 +1,6 @@
 import { describe, it, vi, beforeEach, assert, expect } from 'vitest'
 import plugin from '../index.ts'
-import type { CatalogPlugin } from '@data-fair/lib-common-types/catalog/index.js'
+import type { CatalogPlugin } from '@data-fair/types-catalogs'
 const catalogPlugin: CatalogPlugin = plugin as CatalogPlugin
 const list = catalogPlugin.list
 

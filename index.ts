@@ -3,22 +3,14 @@ import { configSchema, assertConfigValid, type AirtableConfig } from '#types'
 import { type AirtableCapabilities, capabilities } from './lib/capabilities.ts'
 
 const plugin: CatalogPlugin<AirtableConfig, AirtableCapabilities> = {
-  async prepare ({ catalogConfig, secrets }) {
-    if (catalogConfig.apiKey && catalogConfig.apiKey !== '********') {
-      secrets.apiKey = catalogConfig.apiKey
-      catalogConfig.apiKey = '********'
-    } else if (secrets?.apiKey && catalogConfig.apiKey === '') {
-      delete secrets.apiKey
-    }
-    return {
-      catalogConfig,
-      secrets
-    }
+  async prepare (context) {
+    const prepare = (await import('./lib/prepare.ts')).default
+    return prepare(context)
   },
 
-  async list (context) {
-    const { list } = await import('./lib/imports.ts')
-    return list(context)
+  async listResources (context) {
+    const { listResources } = await import('./lib/imports.ts')
+    return listResources(context)
   },
 
   async getResource (context) {

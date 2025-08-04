@@ -2,6 +2,7 @@ import type { CatalogPlugin, GetResourceContext, Resource } from '@data-fair/typ
 import type { AirtableConfig } from '#types'
 import Airtable from 'airtable'
 import { stringify } from 'csv-stringify/sync'
+import slug from 'slugify'
 
 /**
  * Private type to symbolize a field
@@ -151,7 +152,12 @@ const getMetaData = async ({ secrets, resourceId }: GetResourceContext<AirtableC
     title: table.name,
     format: 'csv',
     description: table.description,
-    filePath: ''
+    filePath: '',
+    schema: table.fields.map((field: any) => ({
+      key: slug.default(field.name, { lower: true, strict: true, replacement: '_' }),
+      title: field.name,
+      description: field.description
+    }))
   }
 }
 
@@ -164,12 +170,12 @@ const getMetaData = async ({ secrets, resourceId }: GetResourceContext<AirtableC
  * @param params.secrets - The secrets object containing the Airtable API key.
  * @param params.resourceId - The resource identifier in the format "baseId/tableId".
  * @param params.tmpDir - The temporary directory where the CSV file will be written.
- * @returns The path to the generated CSV file.
+ * @returns A promise resolved with the output path of the CSV file and the schema of the resource.
  *
  * @remarks
  * - Linked table fields are resolved and joined with a pipe ('|') separator.
  */
-const download = async ({ secrets, resourceId, tmpDir }: GetResourceContext<AirtableConfig>, fileName: string): Promise<string> => {
+const download = async ({ secrets, resourceId, tmpDir }: GetResourceContext<AirtableConfig>, fileName: string, schema: Resource['schema']): Promise<{ outputPath: string, schema: Resource['schema'] }> => {
   const [baseId, tableId] = resourceId.split('/')
 
   const fields = await getHeaders(secrets.apiKey, baseId, tableId)
@@ -184,6 +190,8 @@ const download = async ({ secrets, resourceId, tmpDir }: GetResourceContext<Airt
 
   const allHeaders: string[] = fields.map((f: Field) => f.name)
   let isFirstChunk = true
+  // Efficiently detect array fields (including linked tables) for schema
+  const detectedArrayFields = new Set<string>()
 
   await new Promise<void>((resolve, reject) => {
     base(tableId)
@@ -204,6 +212,7 @@ const download = async ({ secrets, resourceId, tmpDir }: GetResourceContext<Airt
                   .filter(Boolean)
               }
               if (Array.isArray(row[field.name])) {
+                detectedArrayFields.add(field.name)
                 row[field.name] = row[field.name].join('|')
               }
             }
@@ -240,7 +249,17 @@ const download = async ({ secrets, resourceId, tmpDir }: GetResourceContext<Airt
     })
   })
 
-  return outputPath
+  // Add separator: '|' to all array columns in schema
+  if (schema) {
+    schema = schema.map((field: any) => {
+      if (detectedArrayFields.has(field.title)) {
+        return { ...field, separator: '|' }
+      }
+      return { ...field }
+    })
+  }
+
+  return { outputPath, schema }
 }
 
 /**
@@ -251,6 +270,8 @@ const download = async ({ secrets, resourceId, tmpDir }: GetResourceContext<Airt
  */
 export const getResource = async (context: GetResourceContext<AirtableConfig>): ReturnType<CatalogPlugin<AirtableConfig>['getResource']> => {
   const res: Resource = await getMetaData(context)
-  res.filePath = await download(context, res.title)
+  const { outputPath, schema } = await download(context, res.title, res.schema || [])
+  res.filePath = outputPath
+  res.schema = schema
   return res
 }

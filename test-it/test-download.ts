@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest'
+import { describe, it, vi, afterEach, beforeEach, assert, expect } from 'vitest'
 import * as fs from 'fs'
 import * as path from 'path'
 import type { CatalogPlugin, GetResourceContext } from '@data-fair/types-catalogs'
@@ -59,8 +59,8 @@ describe('test the getResource function', () => {
 
     const resource = await getResource(context)
     const resultPath = resource?.filePath
-    expect(resultPath).toBe(outputPath)
-    expect(fs.existsSync(outputPath)).toBe(true)
+    assert.strictEqual(resultPath, outputPath)
+    assert.strictEqual(fs.existsSync(outputPath), true)
     const content = fs.readFileSync(outputPath, 'utf8')
     expect(content).toBe('a,b\n1,2\n3,4\n')
     expect(resource?.id).toBe(context.resourceId)
@@ -103,6 +103,21 @@ describe('test the getResource function', () => {
     expect(fs.existsSync(outputPath)).toBe(true)
     const content = fs.readFileSync(outputPath, 'utf8')
     expect(content).toBe('a,b\n1|2,foo\n,bar\n')
+    expect(resource?.id).toBe(context.resourceId)
+    expect(resource?.schema).toBeDefined()
+    assert.deepEqual(resource?.schema, [
+      {
+        description: undefined,
+        key: 'a',
+        separator: '|',
+        title: 'a',
+      },
+      {
+        description: undefined,
+        key: 'b',
+        title: 'b',
+      },
+    ])
   })
 
   it('should return an error with an invalid API key', async () => {

@@ -19,7 +19,12 @@
       "x-i18n-description": {
         "fr": "Votre jeton d'accès personnel (voir https://airtable.com/create/tokens).<br>Permissions requises (*Champs d’application*) : `data.records:read`, `schema.bases:read`.<br>Dans la section 'Accès' : ajouter les bases ou l'espace de travail accessibles via le jeton d'accès personnel."
       },
-      "layout": "textarea"
+      "layout": {
+        "props": {
+          "type": "password",
+          "autocomplete": "new-password"
+        }
+      }
     }
   }
 }

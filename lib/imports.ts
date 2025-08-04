@@ -1,9 +1,27 @@
-import type { ListContext, Folder, CatalogPlugin } from '@data-fair/types-catalogs'
+import type { Folder, CatalogPlugin, ListResourcesContext } from '@data-fair/types-catalogs'
 import type { AirtableConfig } from '#types'
 import type { AirtableCapabilities } from './capabilities.ts'
+import memoize from 'memoize'
 
 let lastBases: Folder[]
-type ResourceList = Awaited<ReturnType<CatalogPlugin['list']>>['results']
+type ResourceList = Awaited<ReturnType<CatalogPlugin['listResources']>>['results']
+
+const fetchWithMemo = memoize(
+  async (url: string, apiKey: string): Promise<any> => {
+    const response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      }
+    })
+    if (!response.ok) {
+      console.error(`Failed to fetch from Airtable API: ${response.status} ${response.statusText}`)
+      throw new Error('Erreur dans la récupération des données depuis Airtable')
+    }
+    return await (response.json())
+  },
+  { maxAge: 1000 * 30 } // Cache for 30 seconds
+)
 
 /**
  * Liste les Bases disponible à partir d'une clé API / Personnal Access Token
@@ -11,18 +29,11 @@ type ResourceList = Awaited<ReturnType<CatalogPlugin['list']>>['results']
  */
 const listBases = async (apiKey: string): Promise<Folder[]> => {
   /* La librairie JS ne permet pas de lister les bases donc cela est fait via un fetch */
-  const response = await fetch('https://api.airtable.com/v0/meta/bases', {
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json'
-    }
-  })
-  if (!response.ok) {
-    console.error(`Failed to list bases: ${response.status} ${response.statusText}`)
-    throw new Error('Erreur dans le listage des bases / Clé d\'API possiblement incorrecte')
+  const data = await fetchWithMemo('https://api.airtable.com/v0/meta/bases', apiKey)
+  if (!data.bases) {
+    console.error('Failed to list bases:', data)
+    throw new Error('Erreur dans le listage des bases Airtable')
   }
-
-  const data = await response.json()
   // transforme data.bases en Folder[]
   const folders: Folder[] = (data.bases || []).map((base: any) => ({
     id: base.id,
@@ -41,43 +52,36 @@ const listBases = async (apiKey: string): Promise<Folder[]> => {
 const listTables = async (apiKey: string, baseId: string): Promise<ResourceList> => {
   // La librairie officielle ne permet pas de lister les tables directement,
   // donc on utilise l'API REST meta/tables
-  const response = await fetch(`https://api.airtable.com/v0/meta/bases/${baseId}/tables`, {
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json'
-    }
-  })
-  if (!response.ok) {
-    console.error(`Failed to list tables: ${response.status} ${response.statusText}`)
+  const data = await fetchWithMemo(`https://api.airtable.com/v0/meta/bases/${baseId}/tables`, apiKey)
+  if (!data.tables) {
+    console.error('Failed to list tables:', data)
     throw new Error('Erreur dans le listage des tables')
   }
 
-  const data = await response.json()
   // transforme les data en Resource[]
-  const resources = (data.tables || []).map((base: any) => ({
+  const resources: ResourceList = (data.tables || []).map((base: any) => ({
     id: baseId + '/' + base.id,
     title: base.name,
     type: 'resource',
     format: 'csv',
-    origin: `https://api.airtable.com/v0/${baseId}/${base.id}`
+    origin: `https://airtable.com/${baseId}/${base.id}`,
   } as ResourceList[number])
   )
   return resources
 }
 
-export const list = async ({ secrets, params }: ListContext<AirtableConfig, AirtableCapabilities>): ReturnType<CatalogPlugin<AirtableConfig>['list']> => {
-  // On suppose que l'id de la base est passé dans params.baseId
+export const listResources = async ({ secrets, params }: ListResourcesContext<AirtableConfig, AirtableCapabilities>): ReturnType<CatalogPlugin<AirtableConfig>['listResources']> => {
   let res: (Folder[] | ResourceList)
   const path: Folder[] = []
-  if (params.currentFolderId) {
+  if (!params.currentFolderId) {
+    res = await listBases(secrets.apiKey)
+  } else {
     res = await listTables(secrets.apiKey, params.currentFolderId)
     path.push({
       id: params.currentFolderId,
       title: lastBases.find((folder) => folder.id === params.currentFolderId)?.title ?? params.currentFolderId,
       type: 'folder'
     })
-  } else {
-    res = await listBases(secrets.apiKey)
   }
   return {
     results: res,

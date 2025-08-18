@@ -123,7 +123,6 @@ const getLinkedTables = async (
  * @param params.resourceId - The resource identifier in the format "baseId/tableId"
  * @returns A promise resolved with the Resource metadata.
  */
-
 const getMetaData = async ({ secrets, resourceId }: GetResourceContext<AirtableConfig>): Promise<Resource> => {
   const [baseId, tableId] = resourceId.split('/')
 
@@ -173,7 +172,7 @@ const getMetaData = async ({ secrets, resourceId }: GetResourceContext<AirtableC
  * @returns A promise resolved with the output path of the CSV file and the schema of the resource.
  *
  * @remarks
- * - Linked table fields are resolved and joined with a pipe ('|') separator.
+ * - Linked table fields are resolved and joined with a pipe (' | ') separator.
  */
 const download = async ({ secrets, resourceId, tmpDir }: GetResourceContext<AirtableConfig>, fileName: string, schema: Resource['schema']): Promise<{ outputPath: string, schema: Resource['schema'] }> => {
   const [baseId, tableId] = resourceId.split('/')
@@ -213,7 +212,7 @@ const download = async ({ secrets, resourceId, tmpDir }: GetResourceContext<Airt
               }
               if (Array.isArray(row[field.name])) {
                 detectedArrayFields.add(field.name)
-                row[field.name] = row[field.name].join('|')
+                row[field.name] = row[field.name].join(' | ')
               }
             }
             return row
@@ -249,11 +248,11 @@ const download = async ({ secrets, resourceId, tmpDir }: GetResourceContext<Airt
     })
   })
 
-  // Add separator: '|' to all array columns in schema
+  // Add separator: ' | ' to all array columns in schema
   if (schema) {
     schema = schema.map((field: any) => {
       if (detectedArrayFields.has(field.title)) {
-        return { ...field, separator: '|' }
+        return { ...field, separator: ' | ' }
       }
       return { ...field }
     })

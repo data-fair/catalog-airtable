@@ -68,7 +68,7 @@ describe('test the getResource function', () => {
     expect(resource?.title).toBe('Table')
   })
 
-  it('transform array in string with \'|\' as separator', async () => {
+  it('transform array in string with \' | \' as separator', async () => {
     const context: GetResourceContext<AirtableConfig> = {
       secrets: { apiKey: 'fake-api-key' },
       resourceId: 'baseId/tableId',
@@ -102,14 +102,14 @@ describe('test the getResource function', () => {
     expect(resultPath).toBe(outputPath)
     expect(fs.existsSync(outputPath)).toBe(true)
     const content = fs.readFileSync(outputPath, 'utf8')
-    expect(content).toBe('a,b\n1|2,foo\n,bar\n')
+    expect(content).toBe('a,b\n1 | 2,foo\n,bar\n')
     expect(resource?.id).toBe(context.resourceId)
     expect(resource?.schema).toBeDefined()
     assert.deepEqual(resource?.schema, [
       {
         description: undefined,
         key: 'a',
-        separator: '|',
+        separator: ' | ',
         title: 'a',
       },
       {

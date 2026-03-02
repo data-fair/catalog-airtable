@@ -1,12 +1,12 @@
 import type { Folder, CatalogPlugin, ListResourcesContext } from '@data-fair/types-catalogs'
 import type { AirtableConfig } from '#types'
 import type { AirtableCapabilities } from './capabilities.ts'
-import memoize from 'memoize'
+import memoizee from 'memoizee'
 
 let lastBases: Folder[]
 type ResourceList = Awaited<ReturnType<CatalogPlugin['listResources']>>['results']
 
-const fetchWithMemo = memoize(
+const fetchWithMemo = memoizee(
   async (url: string, apiKey: string): Promise<any> => {
     const response = await fetch(url, {
       headers: {
@@ -20,11 +20,11 @@ const fetchWithMemo = memoize(
     }
     return await (response.json())
   },
-  { maxAge: 1000 * 30 } // Cache for 30 seconds
+  { maxAge: 1000 * 30, promise: true } // Cache for 30 seconds, evict on rejection
 )
 
 /**
- * Liste les Bases disponible à partir d'une clé API / Personnal Access Token
+ * Liste les Bases disponible à partir d'une clé API / Personal Access Token
  * @returns
  */
 const listBases = async (apiKey: string): Promise<Folder[]> => {

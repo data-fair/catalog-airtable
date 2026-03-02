@@ -135,7 +135,7 @@ const getMetaData = async ({ secrets, resourceId }: GetResourceContext<AirtableC
   })
   if (!response.ok) {
     console.error(`Failed to get table metadata: ${response.status} ${response.statusText}`)
-    throw new Error('Erreur dans la récupération des métadonnées de la table')
+    throw new Error('Erreur lors de la récupération des métadonnées de la table')
   }
 
   const data = await response.json()

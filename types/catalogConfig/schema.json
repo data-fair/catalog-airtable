@@ -22,7 +22,7 @@
       "layout": {
         "props": {
           "type": "password",
-          "autocomplete": "new-password"
+          "autocomplete": "suppress"
         }
       }
     }

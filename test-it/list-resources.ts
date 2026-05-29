@@ -1,9 +1,9 @@
-import { listResources } from '../lib/imports.ts'
+import { list } from '../lib/imports.ts'
 import { describe, it, before, beforeEach, afterEach } from 'node:test'
 import nock from 'nock'
 import assert from 'node:assert'
 
-describe('listResources', () => {
+describe('list', () => {
   before(() => nock.disableNetConnect())
   beforeEach(() => nock.cleanAll())
   afterEach(() => nock.cleanAll())
@@ -18,7 +18,7 @@ describe('listResources', () => {
         ]
       })
 
-    const result = await listResources({ secrets: { apiKey: 'any-key' }, params: {} } as any)
+    const result = await list({ secrets: { apiKey: 'any-key' }, params: {} } as any)
 
     assert.strictEqual(result.count, 2)
     assert.strictEqual(result.results.length, 2)
@@ -38,7 +38,7 @@ describe('listResources', () => {
         ]
       })
 
-    const result = await listResources({ secrets: { apiKey: 'any-key' }, params: { currentFolderId: 'base1' } } as any)
+    const result = await list({ secrets: { apiKey: 'any-key' }, params: { currentFolderId: 'base1' } } as any)
 
     assert.strictEqual(result.count, 3)
     assert.deepStrictEqual(result.results[0], {
@@ -59,7 +59,7 @@ describe('listResources', () => {
       .reply(401, { error: { message: 'Invalid API key' } })
 
     await assert.rejects(
-      async () => await listResources({ secrets: { apiKey: 'invalid-key' }, params: {} } as any),
+      async () => await list({ secrets: { apiKey: 'invalid-key' }, params: {} } as any),
       /Erreur dans la récupération des données depuis Airtable/i
     )
   })

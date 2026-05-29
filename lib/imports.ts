@@ -1,10 +1,10 @@
-import type { Folder, CatalogPlugin, ListResourcesContext } from '@data-fair/types-catalogs'
+import type { Folder, CatalogPlugin, ListContext } from '@data-fair/types-catalogs'
 import type { AirtableConfig } from '#types'
 import type { AirtableCapabilities } from './capabilities.ts'
 import memoizee from 'memoizee'
 
 let lastBases: Folder[]
-type ResourceList = Awaited<ReturnType<CatalogPlugin['listResources']>>['results']
+type ResourceList = Awaited<ReturnType<CatalogPlugin['list']>>['results']
 
 const fetchWithMemo = memoizee(
   async (url: string, apiKey: string): Promise<any> => {
@@ -70,7 +70,7 @@ const listTables = async (apiKey: string, baseId: string): Promise<ResourceList>
   return resources
 }
 
-export const listResources = async ({ secrets, params }: ListResourcesContext<AirtableConfig, AirtableCapabilities>): ReturnType<CatalogPlugin<AirtableConfig>['listResources']> => {
+export const list = async ({ secrets, params }: ListContext<AirtableConfig, AirtableCapabilities>): ReturnType<CatalogPlugin<AirtableConfig>['list']> => {
   let res: (Folder[] | ResourceList)
   const path: Folder[] = []
   if (!params.currentFolderId) {

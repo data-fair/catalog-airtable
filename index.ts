@@ -1,4 +1,4 @@
-import type { CatalogPlugin } from '@data-fair/types-catalogs'
+import type CatalogPlugin from '@data-fair/types-catalogs'
 import { configSchema, assertConfigValid, type AirtableConfig } from '#types'
 import { type AirtableCapabilities, capabilities } from './lib/capabilities.ts'
 
@@ -8,9 +8,9 @@ const plugin: CatalogPlugin<AirtableConfig, AirtableCapabilities> = {
     return prepare(context)
   },
 
-  async listResources (context) {
-    const { listResources } = await import('./lib/imports.ts')
-    return listResources(context)
+  async list (context) {
+    const { list } = await import('./lib/imports.ts')
+    return list(context)
   },
 
   async getResource (context) {
@@ -19,9 +19,7 @@ const plugin: CatalogPlugin<AirtableConfig, AirtableCapabilities> = {
   },
 
   metadata: {
-    title: 'Catalog Airtable',
-    description: 'Airtable plugin for Data Fair Catalog',
-    thumbnailPath: './lib/airtable.svg',
+    title: 'Airtable',
     capabilities
   },
   configSchema,

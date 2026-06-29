@@ -31,14 +31,14 @@ const getHeaders = async (apiKey: string, baseId: string, tableId: string): Prom
     }
   })
   if (!response.ok) {
-    const msg = `Erreur lors de la récupération des tables Airtable (${response.status} ${response.statusText}).`
+    const msg = `Error retrieving Airtable tables (${response.status} ${response.statusText}).`
     console.error(msg)
     throw new Error(msg)
   }
   const tables: any[] = (await response.json()).tables
   const table = tables.find((t) => t.id === tableId)
   if (!table) {
-    const msg = `Table avec l'identifiant "${tableId}" introuvable dans la base "${baseId}".`
+    const msg = `Table with identifier "${tableId}" not found in base "${baseId}".`
     console.error(msg)
     throw new Error(msg)
   }
@@ -51,7 +51,7 @@ const getHeaders = async (apiKey: string, baseId: string, tableId: string): Prom
       f.linkedTable = field.options.linkedTableId
       const linkedTable = tables.find((t) => t.id === f.linkedTable)
       if (!linkedTable) {
-        const msg = `Table liée "${f.linkedTable}" introuvable pour le champ "${field.name}".`
+        const msg = `Linked table "${f.linkedTable}" not found for field "${field.name}".`
         console.error(msg)
         throw new Error(msg)
       }
@@ -100,7 +100,7 @@ const getLinkedTables = async (
             },
             (err) => {
               if (err) {
-                const msg = `Erreur lors de la récupération des enregistrements de la table liée "${field.linkedTable}": ${err.message || err}`
+                const msg = `Error retrieving records from the linked table "${field.linkedTable}": ${err.message || err}`
                 console.error(msg)
                 reject(new Error(msg))
               } else {
@@ -126,7 +126,7 @@ const getLinkedTables = async (
 const getMetaData = async ({ secrets, resourceId }: GetResourceContext<AirtableConfig>): Promise<Resource> => {
   const [baseId, tableId] = resourceId.split('/')
 
-  // Récupère les métadonnées de la table spécifique
+  // Retrieve the metadata of the specific table
   const response = await fetch(`https://api.airtable.com/v0/meta/bases/${baseId}/tables`, {
     headers: {
       Authorization: `Bearer ${secrets.apiKey}`,
@@ -135,7 +135,7 @@ const getMetaData = async ({ secrets, resourceId }: GetResourceContext<AirtableC
   })
   if (!response.ok) {
     console.error(`Failed to get table metadata: ${response.status} ${response.statusText}`)
-    throw new Error('Erreur lors de la récupération des métadonnées de la table')
+    throw new Error('Error retrieving the table metadata')
   }
 
   const data = await response.json()
@@ -144,7 +144,7 @@ const getMetaData = async ({ secrets, resourceId }: GetResourceContext<AirtableC
     throw new Error(`Table ${tableId} not found in base ${baseId}`)
   }
 
-  // format des tables : https://airtable.com/developers/web/api/model/table-model
+  // table format: https://airtable.com/developers/web/api/model/table-model
   return {
     id: resourceId,
     origin: `https://airtable.com/${baseId}/${tableId}`,
@@ -228,7 +228,7 @@ const download = async ({ secrets, resourceId, tmpDir }: GetResourceContext<Airt
         },
         function done (err: any) {
           if (err) {
-            const msg = `Erreur lors de la récupération des enregistrements depuis Airtable : ${err.message || err}`
+            const msg = `Error retrieving records from Airtable: ${err.message || err}`
             console.error(msg)
             reject(new Error(msg))
           } else {
@@ -242,7 +242,7 @@ const download = async ({ secrets, resourceId, tmpDir }: GetResourceContext<Airt
   await new Promise<void>((resolve, reject) => {
     writeStream.on('finish', () => resolve())
     writeStream.on('error', (err) => {
-      const msg = `Erreur lors de l'écriture du fichier CSV : ${err.message || err}`
+      const msg = `Error writing the CSV file: ${err.message || err}`
       console.error(msg)
       reject(new Error(msg))
     })

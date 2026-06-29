@@ -60,7 +60,7 @@ describe('list', () => {
 
     await assert.rejects(
       async () => await list({ secrets: { apiKey: 'invalid-key' }, params: {} } as any),
-      /Erreur dans la récupération des données depuis Airtable/i
+      /Error retrieving data from Airtable/i
     )
   })
 })

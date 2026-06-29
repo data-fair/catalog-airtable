@@ -119,7 +119,7 @@ describe('getResource', () => {
 
     await assert.rejects(
       async () => await getResource(context),
-      /Erreur lors de la récupération des tables Airtable|Erreur lors de la récupération des métadonnées/i
+      /Error listing tables|Error retrieving the table metadata/i
     )
   })
 })

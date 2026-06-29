@@ -16,7 +16,7 @@ const fetchWithMemo = memoizee(
     })
     if (!response.ok) {
       console.error(`Failed to fetch from Airtable API: ${response.status} ${response.statusText}`)
-      throw new Error('Erreur dans la récupération des données depuis Airtable')
+      throw new Error('Error retrieving data from Airtable')
     }
     return await (response.json())
   },
@@ -24,17 +24,17 @@ const fetchWithMemo = memoizee(
 )
 
 /**
- * Liste les Bases disponible à partir d'une clé API / Personal Access Token
+ * Lists the available Bases from an API key / Personal Access Token
  * @returns
  */
 const listBases = async (apiKey: string): Promise<Folder[]> => {
-  /* La librairie JS ne permet pas de lister les bases donc cela est fait via un fetch */
+  /* The JS library does not allow listing bases, so this is done via a fetch */
   const data = await fetchWithMemo('https://api.airtable.com/v0/meta/bases', apiKey)
   if (!data.bases) {
     console.error('Failed to list bases:', data)
-    throw new Error('Erreur dans le listage des bases Airtable')
+    throw new Error('Error listing Airtable bases')
   }
-  // transforme data.bases en Folder[]
+  // transform data.bases into Folder[]
   const folders: Folder[] = (data.bases || []).map((base: any) => ({
     id: base.id,
     title: base.name,
@@ -45,17 +45,17 @@ const listBases = async (apiKey: string): Promise<Folder[]> => {
 }
 
 /**
- * Liste les tables d'une base Airtable via la librairie officielle
- * @param baseId L'identifiant de la base Airtable
- * @returns Un tableau des tables de la base
+ * Lists the tables of an Airtable base via the official library
+ * @param baseId The identifier of the Airtable base
+ * @returns An array of the base's tables
  */
 const listTables = async (apiKey: string, baseId: string): Promise<ResourceList> => {
-  // La librairie officielle ne permet pas de lister les tables directement,
-  // donc on utilise l'API REST meta/tables
+  // The official library does not allow listing tables directly,
+  // so we use the REST API meta/tables
   const data = await fetchWithMemo(`https://api.airtable.com/v0/meta/bases/${baseId}/tables`, apiKey)
   if (!data.tables) {
     console.error('Failed to list tables:', data)
-    throw new Error('Erreur dans le listage des tables')
+    throw new Error('Error listing tables')
   }
 
   // transforme les data en Resource[]

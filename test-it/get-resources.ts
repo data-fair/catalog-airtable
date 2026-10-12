@@ -106,6 +106,34 @@ describe('getResource', () => {
     ])
   })
 
+  it('keeps the CSV file inside tmpDir whatever the remote table name', async () => {
+    const tablesResponse = {
+      tables: [{ id: 'tableId', name: '../../evil', fields: [{ name: 'a' }] }]
+    }
+
+    nock('https://api.airtable.com')
+      .get('/v0/meta/bases/baseId/tables')
+      .twice()
+      .reply(200, tablesResponse)
+
+    nock('https://api.airtable.com')
+      .get('/v0/baseId/tableId')
+      .query(true)
+      .reply(200, {
+        records: [{ id: 'rec1', createdTime: '2022-01-01T00:00:00.000Z', fields: { a: 1 } }]
+      })
+
+    const context: GetResourceContext<AirtableConfig> = {
+      secrets: { apiKey: 'fake-api-key' },
+      resourceId: 'baseId/tableId',
+      tmpDir
+    } as any
+
+    const resource = await getResource(context)
+    assert.strictEqual(path.dirname(resource.filePath), path.normalize(tmpDir))
+    assert.ok(fs.existsSync(resource.filePath))
+  })
+
   it('throws an error with an invalid API key', async () => {
     nock('https://api.airtable.com')
       .get('/v0/meta/bases/baseId/tables')

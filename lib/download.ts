@@ -184,7 +184,8 @@ const download = async ({ secrets, resourceId, tmpDir }: GetResourceContext<Airt
 
   const fs = await import('fs')
   const path = await import('path')
-  const outputPath = path.join(tmpDir, `${fileName.replace(' ', '_')}.csv`)
+  // the file name comes from the remote table name, never let it contain path separators
+  const outputPath = path.join(tmpDir, `${fileName.replace(' ', '_').replace(/[/\\]/g, '_')}.csv`)
   const writeStream = fs.createWriteStream(outputPath)
 
   const allHeaders: string[] = fields.map((f: Field) => f.name)
